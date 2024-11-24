@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
-import { Box, Table, Thead, Tbody, Tr, Th, Td, Text, Select, VStack } from '@chakra-ui/react'
+import { Box, Table, Thead, Tbody, Tr, Th, Td, Text, HStack, Badge, Progress } from '@chakra-ui/react'
 import { getCryptoData } from '../services/cryptoService'
+import { analyzeCryptoMetrics } from '../services/cryptoAnalytics'
 import PriceChart from './PriceChart'
 
 function CryptoList() {
@@ -10,18 +11,12 @@ function CryptoList() {
   useEffect(() => {
     const fetchData = async () => {
       const data = await getCryptoData()
-      const filteredData = data
-        .filter(crypto => 
-          !['USDT', 'USDC', 'BUSD', 'DAI'].includes(crypto.symbol.toUpperCase())
+      const analyzedData = analyzeCryptoMetrics(
+        data.filter(crypto => 
+          !['USDT', 'USDC', 'BUSD', 'DAI', 'TUSD', 'USDD'].includes(crypto.symbol.toUpperCase())
         )
-        .sort((a, b) => {
-          const aScore = (a.total_volume * 0.7) + (Math.abs(a.price_change_percentage_24h) * 0.3)
-          const bScore = (b.total_volume * 0.7) + (Math.abs(b.price_change_percentage_24h) * 0.3)
-          return bScore - aScore
-        })
-        .slice(0, 20)
-      
-      setCryptos(filteredData)
+      )
+      setCryptos(analyzedData)
     }
     
     fetchData()
@@ -29,17 +24,37 @@ function CryptoList() {
     return () => clearInterval(interval)
   }, [])
 
+  const renderScore = (score, label) => (
+    <Box>
+      <Text fontSize="sm" color="gray.600" mb={1}>{label}</Text>
+      <Progress 
+        value={score} 
+        size="sm" 
+        colorScheme={score > 75 ? 'green' : score > 50 ? 'yellow' : 'red'}
+        borderRadius="full"
+      />
+      <Text fontSize="sm" mt={1} fontWeight="bold">
+        {score.toFixed(1)}
+      </Text>
+    </Box>
+  )
+
   return (
-    <VStack spacing={6} align="stretch">
-      <Box bg="white" p={4} borderRadius="lg" boxShadow="sm" overflowX="auto">
+    <Box bg="white" p={4} borderRadius="lg" boxShadow="sm">
+      <Text fontSize="xl" fontWeight="bold" mb={4}>
+        Top Performing Cryptocurrencies
+      </Text>
+      
+      <Box overflowX="auto">
         <Table variant="simple">
           <Thead>
             <Tr>
               <Th>Asset</Th>
               <Th>Price</Th>
               <Th>24h Change</Th>
-              <Th>Volume (24h)</Th>
+              <Th>Volume Score</Th>
               <Th>Stability Score</Th>
+              <Th>Combined Rating</Th>
             </Tr>
           </Thead>
           <Tbody>
@@ -51,16 +66,31 @@ function CryptoList() {
                 _hover={{ bg: 'gray.50' }}
               >
                 <Td>
-                  <Text fontWeight="bold">{crypto.name}</Text>
-                  <Text fontSize="sm" color="gray.500">{crypto.symbol.toUpperCase()}</Text>
+                  <HStack>
+                    <Box>
+                      <Text fontWeight="bold">{crypto.name}</Text>
+                      <Text fontSize="sm" color="gray.500">{crypto.symbol.toUpperCase()}</Text>
+                    </Box>
+                    {crypto.combinedScore > 80 && (
+                      <Badge colorScheme="green">Strong Buy</Badge>
+                    )}
+                  </HStack>
                 </Td>
                 <Td>${crypto.current_price.toLocaleString()}</Td>
                 <Td color={crypto.price_change_percentage_24h > 0 ? 'green.500' : 'red.500'}>
                   {crypto.price_change_percentage_24h.toFixed(2)}%
                 </Td>
-                <Td>${crypto.total_volume.toLocaleString()}</Td>
+                <Td>{renderScore(crypto.volumeScore, 'Volume')}</Td>
+                <Td>{renderScore(crypto.stabilityScore, 'Stability')}</Td>
                 <Td>
-                  {calculateStabilityScore(crypto)}
+                  <Box>
+                    {renderScore(crypto.combinedScore, 'Overall')}
+                    {crypto.combinedScore > 85 && (
+                      <Text fontSize="xs" color="green.500" mt={1}>
+                        High Potential
+                      </Text>
+                    )}
+                  </Box>
                 </Td>
               </Tr>
             ))}
@@ -69,22 +99,14 @@ function CryptoList() {
       </Box>
 
       {selectedCrypto && (
-        <Box bg="white" p={4} borderRadius="lg" boxShadow="sm">
-          <Text fontSize="xl" fontWeight="bold" mb={4}>{selectedCrypto.name} Price History</Text>
+        <Box mt={6}>
+          <Text fontSize="lg" fontWeight="bold" mb={4}>
+            {selectedCrypto.name} Analysis
+          </Text>
           <PriceChart cryptoId={selectedCrypto.id} />
         </Box>
       )}
-    </VStack>
-  )
-}
-
-function calculateStabilityScore(crypto) {
-  const volatility = Math.abs(crypto.price_change_percentage_24h)
-  const score = 100 - (volatility * 2)
-  return (
-    <Text color={score > 70 ? 'green.500' : score > 50 ? 'yellow.500' : 'red.500'}>
-      {score.toFixed(1)}
-    </Text>
+    </Box>
   )
 }
 

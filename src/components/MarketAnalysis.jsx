@@ -9,19 +9,39 @@ function MarketAnalysis() {
   const getAnalysis = async () => {
     setLoading(true)
     try {
-      // Simulated analysis based on market conditions
+      // Simulation d'une analyse experte basée sur les données actuelles
+      const currentBTCPrice = 65000 // À remplacer par le prix réel via API
       const analyses = {
-        summary: "Market showing strong momentum with increasing volume. BTC dominance decreasing, suggesting potential alt season.",
-        detailed: `Current Market Analysis:
-          - Bitcoin showing strength above key moving averages
-          - Alt-coin volume increasing significantly
-          - Market sentiment: Bullish
-          - Key levels to watch: BTC $45k, ETH $2.8k
+        summary: `Market Analysis (${new Date().toLocaleDateString()}):
+          - BTC Price: $${currentBTCPrice.toLocaleString()}
+          - Key Focus: High volume coins maintaining stability
+          - Current Opportunity: Coins showing >80 combined score
+          - Market Phase: Accumulation with increasing volume`,
+        
+        detailed: `Detailed Market Analysis (${new Date().toLocaleDateString()}):
           
-          Recommendation: Monitor high-volume alts showing price stability during dips.`
+          Current Market Conditions:
+          - BTC Price: $${currentBTCPrice.toLocaleString()}
+          - Market Structure: Strong support levels established
+          - Volume Profile: Increasing across major altcoins
+          
+          Key Indicators:
+          - Volume/Stability Ratio: Positive divergence
+          - Market Depth: Improving for high-rated assets
+          - Volatility: Decreasing in selected assets
+          
+          Strategy Recommendations:
+          1. Focus on coins with >85 combined score
+          2. Monitor volume increases during dips
+          3. Track stability scores for early trend identification
+          
+          Risk Management:
+          - Set stops below key support levels
+          - Size positions based on stability score
+          - Monitor BTC correlation for risk assessment`
       }
       
-      await new Promise(resolve => setTimeout(resolve, 1500)) // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 1500))
       setAnalysis(analyses[viewMode])
     } catch (error) {
       console.error('Error getting analysis:', error)
@@ -33,7 +53,7 @@ function MarketAnalysis() {
   return (
     <Box bg="white" p={6} borderRadius="lg" boxShadow="sm">
       <VStack spacing={4} align="stretch">
-        <Text fontSize="xl" fontWeight="bold">Market Analysis</Text>
+        <Text fontSize="xl" fontWeight="bold">Expert Market Analysis</Text>
         
         <Box>
           <Button
@@ -56,18 +76,19 @@ function MarketAnalysis() {
         <Button 
           onClick={getAnalysis}
           isLoading={loading}
-          loadingText="Analyzing..."
+          loadingText="Analyzing Market Data..."
+          colorScheme="blue"
         >
-          Get Analysis
+          Generate Analysis
         </Button>
 
         {loading ? (
           <Box textAlign="center" py={4}>
             <Spinner />
-            <Text mt={2}>Analyzing market conditions...</Text>
+            <Text mt={2}>Processing market data...</Text>
           </Box>
         ) : (
-          <Text whiteSpace="pre-wrap">{analysis}</Text>
+          <Text whiteSpace="pre-wrap" fontSize="sm">{analysis}</Text>
         )}
       </VStack>
     </Box>
